@@ -1,4 +1,4 @@
-"""Seed mock agreements on SensusEscrow (Bradbury).
+"""Seed mock agreements on SensusEscrow (StudioNet).
 
   python deploy/seed.py create <addr> <provider> <covenant> <amount_wei>
   python deploy/seed.py claim <addr> <id> <evidence_url>
@@ -30,7 +30,6 @@ def read(addr, fn, args=None):
         "to": addr,
         "from": ACCT.address,
         "data": serialize(data),
-        "transaction_hash_variant": "latest-final",
     }
     r = C.provider.make_request(method="gen_call", params=[req])["result"]
     if isinstance(r, dict):

@@ -34,4 +34,4 @@ address = getattr(receipt, "contract_address", None) or getattr(
 )
 print("status:", status)
 print("contract address:", address)
-print(f"explorer link: https://explorer-bradbury.genlayer.com/contracts/{address}")
+print(f"explorer link: https://genlayer-explorer.vercel.app/contracts/{address}")

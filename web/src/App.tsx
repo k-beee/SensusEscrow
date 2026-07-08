@@ -112,7 +112,7 @@ export default function App() {
   // Interactive console terminal lines log
   const [consoleLines, setConsoleLines] = useState<{ k: string; t: string }[]>([
     { k: "system", t: "SensusEscrow Protocol Console [Online]" },
-    { k: "dim", t: "Bound to GenLayer Bradbury testnet · Chain ID: " + CHAIN_ID },
+    { k: "dim", t: "Bound to GenLayer StudioNet · Chain ID: " + CHAIN_ID },
     { k: "norm", t: "Type /help to query available commands, or /list to load agreements." },
   ]);
   const [consoleInput, setConsoleInput] = useState("");
@@ -266,7 +266,7 @@ export default function App() {
           <nav className="hidden md:flex items-center space-x-8 text-[11px] font-mono uppercase tracking-[0.2em] text-white/50">
             <a href="#workspace" className="hover:text-white sapphire-underline py-1">Workspace</a>
             <a href="#docket" className="hover:text-white sapphire-underline py-1">Docket</a>
-            <a href={EXPLORER} target="_blank" rel="noopener noreferrer" className="hover:text-white sapphire-underline py-1">Bradbury Explorer</a>
+            <a href={EXPLORER} target="_blank" rel="noopener noreferrer" className="hover:text-white sapphire-underline py-1">Studio Explorer</a>
           </nav>
           <div className="flex items-center space-x-4">
             {authenticated ? (
