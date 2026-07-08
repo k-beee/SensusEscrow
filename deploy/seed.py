@@ -41,6 +41,9 @@ def read(addr, fn, args=None):
 
 
 def wait(txh, timeout=900):
+    """
+    Wait for transaction receipt. GenLayer consensus can take 1-3 minutes.
+    """
     t0 = time.time()
     while time.time() - t0 < timeout:
         s = C.provider.make_request(method="gen_getTransactionStatus", params=[{"txId": txh}])["result"]
