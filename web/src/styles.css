@@ -1,0 +1,145 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #09090b;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(62, 119, 182, 0.25);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(62, 119, 182, 0.55);
+}
+
+body {
+  background-color: #09090b;
+  color: #f4f4f5;
+  font-family: "Inter", sans-serif;
+  overflow-x: hidden;
+}
+
+.glass-panel {
+  background: rgba(255, 255, 255, 0.015);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.transition-premium {
+  transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slow-pulse {
+  0% {
+    transform: translate(0, 0) scale(1) rotate(0deg);
+    opacity: 0.3;
+  }
+  50% {
+    transform: translate(40px, -60px) scale(1.1) rotate(180deg);
+    opacity: 0.55;
+  }
+  100% {
+    transform: translate(0, 0) scale(1) rotate(360deg);
+    opacity: 0.3;
+  }
+}
+
+.sapphire-glow {
+  animation: slow-pulse 25s infinite alternate cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.sapphire-underline {
+  position: relative;
+}
+.sapphire-underline::after {
+  content: "";
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background-color: #5392ca;
+  transition: width 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.sapphire-underline:hover::after {
+  width: 100%;
+}
+
+.spotlight-card {
+  position: relative;
+  background: rgba(255, 255, 255, 0.01);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  overflow: hidden;
+}
+.spotlight-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0;
+  background: radial-gradient(
+    500px circle at var(--mouse-x, 0px) var(--mouse-y, 0px),
+    rgba(83, 146, 202, 0.08),
+    transparent 50%
+  );
+  transition: opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.spotlight-card:hover::before {
+  opacity: 1;
+}
+
+.platinum-border-glow {
+  position: relative;
+  padding: 1px;
+  overflow: hidden;
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.04);
+}
+.platinum-border-glow::after {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  pointer-events: none;
+  z-index: 0;
+  background: linear-gradient(90deg, transparent, rgba(83, 146, 202, 0.3), transparent);
+  background-size: 200% 100%;
+  animation: borderShimmer 6s infinite linear;
+}
+.platinum-content {
+  background: #09090b;
+  border-radius: calc(1rem - 1px);
+  position: relative;
+  z-index: 1;
+  height: 100%;
+}
+@keyframes borderShimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.title-gradient {
+  background: linear-gradient(135deg, #ffffff 0%, #a2c9e7 50%, #5392ca 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.reveal-fade-in {
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity 1.2s cubic-bezier(0.16, 1, 0.3, 1), transform 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.reveal-fade-in.revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
