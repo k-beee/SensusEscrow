@@ -94,17 +94,22 @@ function NodeCanvas() {
 }
 
 export default function App() {
+  // Core state for active agreements queried from the GenLayer blockchain
   const [agreements, setAgreements] = useState<Agreement[]>([]);
+  
+  // Privy authentication states for secure write calls
   const { ready, authenticated, login, logout } = usePrivy();
   const { wallets } = useWallets();
   const wallet = wallets[0];
   const acct = wallet?.address || "";
   
+  // UX UI Layout states
   const [scrolled, setScrolled] = useState(false);
   const [busy, setBusy] = useState(false);
   const [toasts, setToasts] = useState<{ id: number; m: string }[]>([]);
   const [activeTab, setActiveTab] = useState<"create" | "claim" | "refund">("create");
   
+  // Interactive console terminal lines log
   const [consoleLines, setConsoleLines] = useState<{ k: string; t: string }[]>([
     { k: "system", t: "SensusEscrow Protocol Console [Online]" },
     { k: "dim", t: "Bound to GenLayer Bradbury testnet · Chain ID: " + CHAIN_ID },
@@ -112,6 +117,7 @@ export default function App() {
   ]);
   const [consoleInput, setConsoleInput] = useState("");
   
+  // Guided transaction input forms states
   const [createForm, setCreateForm] = useState({ provider: "", covenant: "", amount: "" });
   const [claimForm, setClaimForm] = useState({ agreement_id: "", evidence_url: "" });
   const [refundForm, setRefundForm] = useState({ agreement_id: "" });
