@@ -24,8 +24,8 @@ VERDICTS = ("PASS", "FAIL", "UNDETERMINED")
 @dataclass
 class Agreement:
     agreement_id: u256
-    client: Address          # The funding party
-    provider: Address        # The executing party
+    client: str              # Hex string address of funding party
+    provider: str            # Hex string address of executing party
     covenant_text: str       # Semantic terms under evaluation
     amount: u256             # Locked balance in native tokens
     status: str              # ACTIVE | CLAIMED | RESOLVED | REFUNDED
@@ -36,12 +36,14 @@ class Agreement:
 
 
 class SensusEscrow(gl.Contract):
-    owner: Address
-    next_agreement_id: u256
-    agreements: TreeMap[u256, Agreement]
-    agreement_ids: DynArray[u256]
+    # Contract administrators and state management
+    owner: Address                         # The administrator address who deployed the contract
+    next_agreement_id: u256                # Monotonic counter to index new agreements
+    agreements: TreeMap[u256, Agreement]   # Secure storage map for agreements indexed by ID
+    agreement_ids: DynArray[u256]          # Keep track of active agreement keys for indexing
 
     def __init__(self):
+        # Creator is set as owner of the smart escrow coordinator
         self.owner = gl.message.sender_address
         self.next_agreement_id = u256(1)
 
@@ -52,7 +54,7 @@ class SensusEscrow(gl.Contract):
         s = re.sub(r"[\x00-\x08\x0B\x0C\x0E-\x1F]", "", s)
         return s[:max_len]
 
-    def _pay(self, recipient: Address, amount: u256) -> None:
+    def _pay(self, recipient: str, amount: u256) -> None:
         """
         Transfers native tokens (GEN) to a recipient address.
         """
@@ -62,15 +64,19 @@ class SensusEscrow(gl.Contract):
                 pass
             class Write:
                 pass
-        _Recipient(recipient).emit_transfer(value=amount)
+        _Recipient(Address(recipient)).emit_transfer(value=amount)
 
     # ----------------------------- Write Operations -----------------------------
 
     @gl.public.write
-    def create_agreement(self, provider: Address, covenant_text: str) -> u256:
+    def create_agreement(self, provider: str, covenant_text: str) -> u256:
         """
         Client creates an agreement by sending native value and specifying the terms.
         """
+        provider = self._sanitize(provider, 42).lower()
+        if not re.match(r"^0x[0-9a-fA-F]{40}$", provider):
+            raise gl.vm.UserError("[EXPECTED] invalid provider address format")
+
         covenant_text = self._sanitize(covenant_text, 1600)
         if not covenant_text:
             raise gl.vm.UserError("[EXPECTED] covenant_text is required")
@@ -82,7 +88,7 @@ class SensusEscrow(gl.Contract):
 
         self.agreements[aid] = Agreement(
             agreement_id=aid,
-            client=gl.message.sender_address,
+            client=str(gl.message.sender_address).lower(),
             provider=provider,
             covenant_text=covenant_text,
             amount=gl.message.value,
@@ -104,7 +110,7 @@ class SensusEscrow(gl.Contract):
             raise gl.vm.UserError("[EXPECTED] unknown agreement")
         a = self.agreements[agreement_id]
 
-        if gl.message.sender_address != a.provider:
+        if str(gl.message.sender_address).lower() != a.provider:
             raise gl.vm.UserError("[EXPECTED] only provider can submit a claim")
         if a.status not in ("ACTIVE", "CLAIMED"):
             raise gl.vm.UserError("[EXPECTED] agreement is not in an active claimable state")
@@ -127,7 +133,7 @@ class SensusEscrow(gl.Contract):
             raise gl.vm.UserError("[EXPECTED] unknown agreement")
         a = self.agreements[agreement_id]
 
-        if gl.message.sender_address != a.provider:
+        if str(gl.message.sender_address).lower() != a.provider:
             raise gl.vm.UserError("[EXPECTED] only provider can authorize voluntary refund")
         if a.status not in ("ACTIVE", "CLAIMED"):
             raise gl.vm.UserError("[EXPECTED] agreement is already finalized")
