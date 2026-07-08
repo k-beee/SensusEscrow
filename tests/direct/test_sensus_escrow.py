@@ -7,7 +7,7 @@ import json
 
 CONTRACT = "contracts/sensus_escrow.py"
 WEB = r".*evidence-source\.org.*"
-LLM = r".*expert consensus adjudicator.*"
+LLM = r".*professional third-party arbitrator.*"
 URL = "https://evidence-source.org/verify"
 
 
