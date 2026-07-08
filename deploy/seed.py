@@ -15,12 +15,12 @@ from dotenv import load_dotenv
 from genlayer_py import create_account, create_client
 from genlayer_py.abi import calldata
 from genlayer_py.abi.transactions import serialize
-from genlayer_py.chains import testnet_bradbury
+from genlayer_py.chains import studionet
 from genlayer_py.contracts.utils import make_calldata_object
 
 load_dotenv()
 ACCT = create_account(os.environ["ACCOUNT_PRIVATE_KEY"])
-C = create_client(chain=testnet_bradbury, account=ACCT)
+C = create_client(chain=studionet, account=ACCT)
 
 
 def read(addr, fn, args=None):
@@ -40,21 +40,18 @@ def read(addr, fn, args=None):
     return calldata.decode(eth_utils.hexadecimal.decode_hex("0x" + r))
 
 
-def wait(txh, timeout=900):
-    """
-    Wait for transaction receipt. GenLayer consensus can take 1-3 minutes.
-    """
-    t0 = time.time()
-    while time.time() - t0 < timeout:
-        s = C.provider.make_request(method="gen_getTransactionStatus", params=[{"txId": txh}])["result"]
-        code = s.get("statusCode")
-        print(f"  {txh[:12]}.. {s.get('status')}({code})")
-        if code in (5, 7):
-            return
-        if code in (11, 12, 13):
-            raise SystemExit(f"Consensus failed: {s}")
-        time.sleep(12)
-    raise SystemExit("timeout waiting for transaction receipt")
+def wait(txh):
+    print(f"  {txh[:12]}.. Proposing")
+    while True:
+        try:
+            tx = C.get_transaction(txh)
+            status = tx.get("status")
+            code = int(status) if status is not None else 0
+            if code in (5, 7):
+                return
+        except Exception:
+            pass
+        time.sleep(2)
 
 
 def write(addr, fn, args, value=0):

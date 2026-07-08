@@ -66,7 +66,7 @@ class SensusEscrow(gl.Contract):
 
     # ----------------------------- State Modifying Methods -----------------------------
 
-    @gl.public.write
+    @gl.public.write.payable
     def create_agreement(self, provider: str, covenant_text: str) -> u256:
         """
         Registers a new escrow instance. Client must attach native tokens to fund the deal.
