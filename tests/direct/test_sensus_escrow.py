@@ -19,11 +19,11 @@ def _mock(direct_vm, verdict):
 
 def test_escrow_lifecycle_pass(direct_vm, direct_deploy, direct_owner, direct_bob):
     # Setup roles: owner is client, bob is provider
-    client = direct_owner
-    provider = direct_bob
+    client = f"0x{direct_owner.hex()}"
+    provider = f"0x{direct_bob.hex()}"
 
     # Deploy contract
-    direct_vm.sender = client
+    direct_vm.sender = direct_owner
     c = direct_deploy(CONTRACT)
 
     # 1. Create Agreement (escrow deposit)
@@ -33,8 +33,8 @@ def test_escrow_lifecycle_pass(direct_vm, direct_deploy, direct_owner, direct_bo
     assert c.agreement_count() == 1
 
     a = c.get_agreement(aid)
-    assert a["client"] == client.hex()
-    assert a["provider"] == provider.hex()
+    assert a["client"].lower() == client.lower()
+    assert a["provider"].lower() == provider.lower()
     assert a["amount"] == 1000000000000000000
     assert a["status"] == "ACTIVE"
     assert a["verdict"] == "PENDING"
@@ -44,7 +44,7 @@ def test_escrow_lifecycle_pass(direct_vm, direct_deploy, direct_owner, direct_bo
     with direct_vm.expect_revert("only provider can submit a claim"):
         c.submit_claim(aid, URL)
 
-    direct_vm.sender = provider
+    direct_vm.sender = direct_bob
     res_claim = c.submit_claim(aid, URL)
     assert res_claim["status"] == "CLAIMED"
     assert res_claim["evidence_url"] == URL
@@ -52,7 +52,7 @@ def test_escrow_lifecycle_pass(direct_vm, direct_deploy, direct_owner, direct_bo
     # 3. Crank with PASS verdict (releases funds to provider)
     _mock(direct_vm, "PASS")
     # Scribe/anyone can crank
-    direct_vm.sender = client
+    direct_vm.sender = direct_owner
     res_crank = c.crank(aid)
     assert res_crank["status"] == "RESOLVED"
     assert res_crank["verdict"] == "PASS"
@@ -60,10 +60,10 @@ def test_escrow_lifecycle_pass(direct_vm, direct_deploy, direct_owner, direct_bo
 
 
 def test_escrow_lifecycle_fail(direct_vm, direct_deploy, direct_owner, direct_bob):
-    client = direct_owner
-    provider = direct_bob
+    client = f"0x{direct_owner.hex()}"
+    provider = f"0x{direct_bob.hex()}"
 
-    direct_vm.sender = client
+    direct_vm.sender = direct_owner
     c = direct_deploy(CONTRACT)
 
     direct_vm.value = 500000
@@ -71,7 +71,7 @@ def test_escrow_lifecycle_fail(direct_vm, direct_deploy, direct_owner, direct_bo
 
     # Submit claim
     direct_vm.value = 0
-    direct_vm.sender = provider
+    direct_vm.sender = direct_bob
     c.submit_claim(aid, URL)
 
     # Crank with FAIL verdict (refunds client)
@@ -82,10 +82,10 @@ def test_escrow_lifecycle_fail(direct_vm, direct_deploy, direct_owner, direct_bo
 
 
 def test_voluntary_refund(direct_vm, direct_deploy, direct_owner, direct_bob):
-    client = direct_owner
-    provider = direct_bob
+    client = f"0x{direct_owner.hex()}"
+    provider = f"0x{direct_bob.hex()}"
 
-    direct_vm.sender = client
+    direct_vm.sender = direct_owner
     c = direct_deploy(CONTRACT)
 
     direct_vm.value = 800000
@@ -93,28 +93,28 @@ def test_voluntary_refund(direct_vm, direct_deploy, direct_owner, direct_bob):
 
     # Provider performs voluntary refund
     direct_vm.value = 0
-    direct_vm.sender = provider
+    direct_vm.sender = direct_bob
     res = c.voluntary_refund(aid)
     assert res["status"] == "REFUNDED"
     assert res["rationale"] == "Voluntary provider refund"
 
 
 def test_undetermined_reset(direct_vm, direct_deploy, direct_owner, direct_bob):
-    client = direct_owner
-    provider = direct_bob
+    client = f"0x{direct_owner.hex()}"
+    provider = f"0x{direct_bob.hex()}"
 
-    direct_vm.sender = client
+    direct_vm.sender = direct_owner
     c = direct_deploy(CONTRACT)
 
     direct_vm.value = 300000
     aid = int(c.create_agreement(provider, "Check updates"))
 
-    direct_vm.sender = provider
+    direct_vm.sender = direct_bob
     c.submit_claim(aid, URL)
 
     # Crank with UNDETERMINED (resets to ACTIVE for further evidence)
     _mock(direct_vm, "UNDETERMINED")
-    direct_vm.sender = client
+    direct_vm.sender = direct_owner
     res = c.crank(aid)
     assert res["status"] == "ACTIVE"
     assert res["verdict"] == "UNDETERMINED"
