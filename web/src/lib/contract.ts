@@ -1,13 +1,12 @@
 import { createClient, createAccount } from "genlayer-js";
-import { testnetBradbury } from "genlayer-js/chains";
 
-// Toggle between StudioNet (simulated environment) and Bradbury Testnet (public testnet)
-export const USE_STUDIO = true;
-
-// PLACEHOLDER: Update this with the deployed contract address on your active network
+// Permanent StudioNet configurations
 export const CONTRACT = "0xC9D2A7Ca1b37dD49F14e225b1a0bD97fC50FD461";
+export const CHAIN_ID = 61999;
+export const RPC = "https://studio.genlayer.com/api";
+export const EXPLORER = "https://genlayer-explorer.vercel.app";
 
-// StudioNet custom chain details
+// StudioNet chain configuration mapping
 const studioNet = {
   id: 61999,
   name: "Genlayer Studio Network",
@@ -17,11 +16,6 @@ const studioNet = {
     }
   }
 };
-
-export const CHAIN_ID = USE_STUDIO ? 61999 : 4221;
-export const RPC = USE_STUDIO ? "https://studio.genlayer.com/api" : "https://rpc-bradbury.genlayer.com";
-export const EXPLORER = USE_STUDIO ? "https://genlayer-explorer.vercel.app" : "https://explorer-bradbury.genlayer.com";
-const ACTIVE_CHAIN = USE_STUDIO ? studioNet : testnetBradbury;
 
 export type Agreement = {
   agreement_id: number;
@@ -37,7 +31,7 @@ export type Agreement = {
 };
 
 // Read-only client - direct wallet-free queries
-const reader = createClient({ chain: ACTIVE_CHAIN as any, account: createAccount() });
+const reader = createClient({ chain: studioNet as any, account: createAccount() });
 const read = (functionName: string, args: any[] = []) =>
   reader.readContract({ address: CONTRACT, functionName, args });
 
