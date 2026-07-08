@@ -18,11 +18,11 @@ def _mock(direct_vm, verdict):
 
 
 def test_escrow_lifecycle_pass(direct_vm, direct_deploy, direct_owner, direct_bob):
-    # Setup roles: owner is client, bob is provider
+    # Map the mock testing addresses into hex string accounts
     client = f"0x{direct_owner.hex()}"
     provider = f"0x{direct_bob.hex()}"
 
-    # Deploy contract
+    # Deploy the contract locally using the direct VM deployer fixture
     direct_vm.sender = direct_owner
     c = direct_deploy(CONTRACT)
 
