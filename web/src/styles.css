@@ -30,6 +30,7 @@ body {
   border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
+/* Custom cubic-bezier transition curves for high-end micro-interactions */
 .transition-premium {
   transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
 }
