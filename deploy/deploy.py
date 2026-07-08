@@ -11,10 +11,12 @@ from genlayer_py.types.transactions import TransactionStatus
 
 load_dotenv()
 
+# Read private key from the git-ignored local environment file
 key = os.environ.get("ACCOUNT_PRIVATE_KEY", "")
 if not key or set(key.replace("0x", "")) <= {"0"}:
     raise SystemExit("ACCOUNT_PRIVATE_KEY missing in .env. Setup .env with private key.")
 
+# Setup account object and initialize client for the Bradbury testnet chain
 account = create_account(key)
 client = create_client(chain=testnet_bradbury, account=account)
 code = Path("contracts/sensus_escrow.py").read_text()
