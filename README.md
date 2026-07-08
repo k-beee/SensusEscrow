@@ -1,142 +1,119 @@
-# SensusEscrow — Decentralized Semantic Escrow Agreement Protocol
+# SensusEscrow: Decentralized Semantic Escrow Protocol
 
-SensusEscrow is a decentralized native escrow agreement protocol on GenLayer. It enables parties to lock funds on-chain under **plain-language covenants** (e.g., *"the delivered code passes latency tests under 150ms"* or *"the published text matches the editorial guidelines"*). When a service provider claims fulfillment, GenLayer validators fetch the cited proof, run LLM consensus on whether the conditions are satisfied, and automatically route the locked collateral: releasing 100% of the funds to the provider on `PASS`, or refunding the client on `FAIL`.
+A decentralized, trustless escrow agreement coordinator running natively on GenLayer. SensusEscrow allows adversarial parties to deposit native tokens (GEN) into a smart escrow contract and settle outcomes based on **natural-language covenants** rather than rigid bytecode.
 
-It is actively designed to work natively on **Testnet Bradbury (chain 4221)**.
-
----
-
-## Why GenLayer is Essential for Semantic Escrows
-
-Standard smart contract platforms (like Ethereum or Solana) are fundamentally limited to deterministic bytecode. They cannot evaluate natural-language conditions because:
-1. **No byte-level representation:** A covenant such as *"reasonable latency"* or *"high-quality documentation"* has no canonical binary state.
-2. **Oracle centralisation:** Deterministic blockchains must rely on a trusted off-chain party (an oracle or multi-sig committee) to fetch web pages, run LLMs, and write the verdict back to the chain.
-
-GenLayer resolves this by pushing non-deterministic evaluations into the consensus engine itself. SensusEscrow leverages GenLayer's primary strengths:
-- **Non-deterministic rendering:** Validators fetch and parse dynamic web contents via `gl.nondet.web.render(url)`.
-- **Decentralized LLM inference:** Validators evaluate the evidence using heterogeneous LLMs via `gl.nondet.exec_prompt(...)`.
-- **Categorical consensus:** Instead of comparing raw model string completions (which vary naturally), validators run the same code and reach consensus on a categorical verdict enum (`PASS`/`FAIL`/`UNDETERMINED`) inside `gl.vm.run_nondet_unsafe(...)`.
+GenLayer validators evaluate dynamic web evidence, reach consensus on fulfillment using LLMs, and route locked escrow balances automatically:
+- **PASS:** 100% of escrowed funds are released to the provider.
+- **FAIL:** 100% of escrowed funds are refunded to the client.
+- **UNDETERMINED:** Funds remain locked, resetting status to active for updated evidence.
 
 ---
 
-## The Protocol Lifecycle
+## The Semantic Escrow Problem: EVM vs. GenLayer
 
-```
-    [Create Escrow] (Client locks native value in ACTIVE state)
-           │
-           ▼
-     [Submit Claim] (Provider uploads completion evidence URL; status -> CLAIMED)
-           │
-           ▼
-       [Crank AI] (Validators fetch proof + execute consensus prompts)
-           │
-           ├─── PASS ──────▶ [RESOLVED] ──▶ Auto-release locked funds to Provider
-           │
-           ├─── FAIL ──────▶ [REFUNDED] ──▶ Auto-refund locked funds to Client
-           │
-           └─── UNDETERMINED ─▶ [ACTIVE] ──▶ Returns to active state for better proof
-```
-
-*Note: SensusEscrow also supports a **Voluntary Refund** path where the provider can voluntarily cancel the agreement and refund the client, bypassing validation.*
+| Feature / Scenario | Traditional EVM Escrow | GenLayer SensusEscrow |
+| :--- | :--- | :--- |
+| **Agreement Terms** | Must be coded in strict Solidity variables (e.g. integer bounds, timestamps). | Written in natural language (e.g., *"API response latency remains under 150ms"*). |
+| **Evidence Validation** | Relies on centralized off-chain oracle feeds or trusted multi-sig admin keys. | Decentralized consensus of validators fetching and parsing web sources natively. |
+| **LLM Reasoning** | Impossible on-chain; must run off-chain via centralized servers. | Native, deterministic LLM evaluation executing inside the consensus boundary. |
+| **Trust Model** | Trust the single operator/oracle not to manipulate inputs. | Trust the categorical consensus of the validator network. |
 
 ---
 
-## Technical Specifications & Security
+## Execution Protocol Flow
 
-- **Strict Custom Equivalence:** Consensus is enforced only on the verdict categories. This ensures minor linguistic variations in LLM rationales do not trigger consensus deadlocks.
-- **Payload & Input Sanitization:** Control characters are stripped and string inputs are strictly length-capped before building prompt scopes, preventing prompt injection attacks.
-- **Consensus Size Protection:** Evidence text is capped at 6,000 characters to keep network data overhead small and transaction times fast.
-- **No Float Usage:** The contract strictly avoids Python floats (which are non-deterministic at runtime) and handles balances using integer values in Wei equivalents.
-- **Idempotent Adjudication:** If a contract has already resolved, calling `crank` returns current state immediately without running additional validation rounds.
+1. **Escrow Deployment:** The client initializes an agreement with `create_agreement(provider_address, covenant_text)` and deposits native funds. The agreement status enters `ACTIVE`.
+2. **Delivery Claim:** Once service is complete, the provider calls `submit_claim(agreement_id, evidence_url)`. This moves status to `CLAIMED` and logs the evidence page URL.
+3. **Consensus Arbitration:** A keeper/scribe calls `crank(agreement_id)`. Validators dynamically fetch evidence via `gl.nondet.web.render`, prompt LLMs to evaluate against covenant terms, and execute custom validation to agree on the categorical verdict.
+4. **Auto-Settlement:** State mutates deterministically based on the consensus verdict. PASS transfers funds to the provider; FAIL refunds the client; UNDETERMINED resets the agreement back to `ACTIVE` so the provider can submit updated evidence.
+
+*Note: SensusEscrow features a **Voluntary Refund** route where the provider can voluntarily refund the client, bypassing validation if they wish to cancel.*
 
 ---
 
-## Code Repository Structure
+## User Dashboard & Interactive CLI Console
 
+SensusEscrow ships with a premium dashboard styled in a deep **Sapphire and Platinum** color palette.
+
+### 1. Guided UI Panels
+- **Create Escrow:** Form to specify provider address, draft plain-text covenants, and enter native value.
+- **File Claim:** Portal for providers to submit active agreement IDs and completion evidence URLs.
+- **Request Refund:** Voluntary cancel portal for service providers.
+
+### 2. Built-in Terminal Shell Console
+An interactive terminal console is built directly into the UI dashboard, allowing power users to query state and execute actions using slash commands:
+- `/list` — Display all escrow agreements currently recorded on-chain.
+- `/get <agreement_id>` — Retrieve full JSON state details of an agreement.
+- `/crank <agreement_id>` — Trigger validator consensus run on a submitted claim.
+- `/clear` — Clear terminal logs history.
+- `/help` — List terminal operations.
+
+---
+
+## Developer Handbook
+
+### File Directory Layout
 ```
 SensusEscrow/
 ├── contracts/
-│   └── sensus_escrow.py      # Py-GenVM Intelligent Contract
+│   └── sensus_escrow.py      # Core intelligent contract
 ├── tests/
 │   └── direct/
-│       └── test_sensus_escrow.py # Mocked in-memory pytest suite
+│       └── test_sensus_escrow.py # direct-mode pytest suite
 ├── deploy/
-│   ├── deploy.py             # Bradbury deployment script
-│   └── seed.py               # Interactive CLI seeding tool
+│   ├── deploy.py             # Contract deployment script
+│   └── seed.py               # Interactive CLI testing helper
 ├── web/
 │   ├── src/
 │   │   ├── lib/
-│   │   │   └── contract.ts   # Contract client integration (genlayer-js)
-│   │   ├── App.tsx           # Classy Sapphire Dashboard UI
-│   │   ├── main.tsx          # App entry and Privy wrapper
-│   │   └── styles.css        # Customs styling and animations
-│   ├── tailwind.config.js    # Tailwind styling config
-│   ├── vite.config.ts        # Vite bundle builder
-│   └── package.json          # Node dependencies list
-├── gltest.config.yaml        # Local test runner config
-└── README.md                 # Project documentation
+│   │   │   └── contract.ts   # RPC provider (genlayer-js)
+│   │   ├── App.tsx           # React Dashboard UI
+│   │   ├── main.tsx          # React entry with Privy
+│   │   └── styles.css        # Sapphire theme custom CSS
+│   ├── package.json          # Node package list
+│   └── tailwind.config.js    # Tailwind layout options
+└── gltest.config.yaml        # test runner config
 ```
 
----
+### Setup & Local Testing
 
-## Build, Test, and Deploy
-
-### Prerequisites
-- Python ≥ 3.12
-- Node.js ≥ 18
-- Access to the Bradbury faucet to fund your deployment address: [Bradbury Faucet](https://testnet-faucet.genlayer.foundation/)
-
-### 1. Smart Contract Development
+SensusEscrow requires **Python ≥ 3.12** and **Node.js ≥ 18**.
 
 ```bash
-# Set up virtual environment & install requirements
+# 1. Initialize environment & install requirements
 python3 -m venv .venv
 source .venv/bin/activate
-pip install -r ../LexForge/requirements.txt  # Installs genvm-linter and testing suites
+pip install -r ../LexForge/requirements.txt
 
-# Lint the contract (AST safety check)
+# 2. Check contract validity and safety rules
 genvm-lint check contracts/sensus_escrow.py
 
-# Run direct-mode unit tests
-ACCOUNT_PRIVATE_KEY=0x<your-32-byte-hex> pytest tests/direct/ -q
+# 3. Run mock direct-mode pytest suite
+ACCOUNT_PRIVATE_KEY=0x<your-32-byte-private-key> pytest tests/direct/ -q
 ```
 
-### 2. Contract Deployment
+### On-Chain Deployment
 
-Create a `.env` file in the root directory:
+Configure your private key in a local git-ignored `.env` file in the root:
 ```env
-ACCOUNT_PRIVATE_KEY=0x<your-private-key-hex-here>
+ACCOUNT_PRIVATE_KEY=0x<your-private-key-hex-prefixed-with-0x>
 ```
 
-Deploy the contract:
+Run the deploy script:
 ```bash
 python deploy/deploy.py
 ```
-
-### 3. Running the Frontend
-
-Once the contract is deployed, update the `CONTRACT` address inside `web/src/lib/contract.ts` with your new contract address:
-```typescript
-export const CONTRACT = "0x<your-deployed-contract-address>";
-```
-
-Install packages and build the static assets:
+This will compile the contract code, send the deploy transaction, and print the active contract address. Update the `CONTRACT` constant in `web/src/lib/contract.ts` with the new address before running the web server:
 ```bash
 cd web
 npm install
-npm run build
-```
-
-To run the local development server:
-```bash
 npm run dev
 ```
 
 ---
 
-## Product Roadmap
+## Evolution Roadmap
 
-- **Escrow Fee Pools:** Implement a scribe fee pool where callers of the `crank` transaction are rewarded with a small fraction of the escrow to incentivize decentralized upkeep.
-- **Multisig Dispute Initiation:** Enable multi-sig claims where multiple providers or clients must sign off to initiate or contest validation.
-- **Evidence Screen-capture Parsing:** Support visual evidence parsing where validators use multimodal Vision models to check graphical proof.
-- **Arbitration Appeal Windows:** Design appeal dispute structures allowing either party to challenge the validator consensus, raising validation tiers and requiring a larger consensus quorum.
+- **Scribe Reward Pools:** Implement a transaction bounty system where a small percentage of the escrow is automatically awarded to the keeper/scribe who successfully triggers the `crank` transaction, incentivizing continuous operation.
+- **Multisig Covenants:** Enable client and provider accounts to be multi-sig inputs, allowing complex corporate or team agreements.
+- **Arbitration Quorums & Appeals:** Build an appeal pathway where contested verdicts escalate to higher consensus models with visual screen-capture evidence.
