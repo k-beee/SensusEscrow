@@ -83,7 +83,7 @@ SensusEscrow requires **Python ≥ 3.12** and **Node.js ≥ 18**.
 # 1. Initialize environment & install requirements
 python3 -m venv .venv
 source .venv/bin/activate
-pip install -r ../LexForge/requirements.txt
+pip install -r requirements.txt
 
 # 2. Check contract validity and safety rules
 genvm-lint check contracts/sensus_escrow.py
