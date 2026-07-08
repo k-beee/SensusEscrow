@@ -139,3 +139,4 @@ npm run dev
 - **Escrow Fee Pools:** Implement a scribe fee pool where callers of the `crank` transaction are rewarded with a small fraction of the escrow to incentivize decentralized upkeep.
 - **Multisig Dispute Initiation:** Enable multi-sig claims where multiple providers or clients must sign off to initiate or contest validation.
 - **Evidence Screen-capture Parsing:** Support visual evidence parsing where validators use multimodal Vision models to check graphical proof.
+- **Arbitration Appeal Windows:** Design appeal dispute structures allowing either party to challenge the validator consensus, raising validation tiers and requiring a larger consensus quorum.
