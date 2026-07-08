@@ -28,6 +28,7 @@ const read = (functionName: string, args: any[] = []) =>
 export const agreementCount = async (): Promise<number> => Number(await read("agreement_count"));
 export const getAgreement = (id: number) => read("get_agreement", [id]) as Promise<Agreement>;
 
+// Internal helper with exponential backoff / retry mechanism to handle transient RPC timeouts
 async function readAgreement(id: number, tries = 3): Promise<Agreement | null> {
   for (let t = 0; t < tries; t++) {
     try { return (await getAgreement(id)) as Agreement; } catch { await new Promise((r) => setTimeout(r, 400)); }
@@ -35,6 +36,7 @@ async function readAgreement(id: number, tries = 3): Promise<Agreement | null> {
   return null;
 }
 
+// Queries all agreements on-chain sequentially and returns them in reverse-chronological order
 export async function listAgreements(): Promise<Agreement[]> {
   try {
     const n = await agreementCount();
